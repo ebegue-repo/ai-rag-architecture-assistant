@@ -31,3 +31,14 @@ The application is intended to evolve into a RAG-based architecture assistant.
 The initial implementation should remain deliberately simple.
 Do not introduce vector databases, LLM integration, embeddings or document
 processing until they are required by a specific feature.
+
+## Agent workflow
+
+Before making significant changes:
+
+1. Inspect the relevant project documentation.
+2. Explain the proposed approach and affected files.
+3. Identify important technical decisions and trade-offs.
+4. Wait for user approval before making significant architectural changes.
+5. Keep changes focused on the requested task.
+6. Run relevant tests after implementation.
