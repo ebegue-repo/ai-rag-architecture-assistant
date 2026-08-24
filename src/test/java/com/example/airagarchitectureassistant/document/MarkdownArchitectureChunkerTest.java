@@ -59,6 +59,7 @@ class MarkdownArchitectureChunkerTest {
         assertThat(chunks).hasSize(1);
         assertThat(chunks.get(0).text()).contains("## Services");
         assertThat(chunks.get(0).text()).contains("independent");
+        assertThat(chunks.get(0).text().length()).isLessThanOrEqualTo(500);
     }
 
     @Test
@@ -70,6 +71,7 @@ class MarkdownArchitectureChunkerTest {
         var chunks = chunker.chunk(markdown);
 
         assertThat(chunks).hasSizeGreaterThan(1);
+        assertThat(chunks).allSatisfy(chunk -> assertThat(chunk.text().length()).isLessThanOrEqualTo(80));
         assertThat(chunks.get(1).text()).contains(chunks.get(0).text().substring(chunks.get(0).text().length() - 20));
     }
 
@@ -81,7 +83,7 @@ class MarkdownArchitectureChunkerTest {
 
         assertThat(chunks).hasSize(1);
         assertThat(chunks.get(0).headingPath()).isEmpty();
-        assertThat(chunks.get(0).text()).contains("Plain text paragraph");
+        assertThat(chunks.get(0).text()).isEqualTo("Plain text paragraph.\nAnother line of context.");
     }
 
     @Test
@@ -112,6 +114,30 @@ class MarkdownArchitectureChunkerTest {
     }
 
     @Test
+    void chunkerPreservesBlankLinesAndUnixNewlines() {
+        String markdown = "# Overview\r\nFirst paragraph.\r\n\r\nSecond paragraph.";
+
+        var chunks = new MarkdownArchitectureChunker(new ChunkingOptions(200, 25)).chunk(markdown);
+
+        assertThat(chunks).hasSize(1);
+        assertThat(chunks.get(0).text()).isEqualTo("# Overview\n\nFirst paragraph.\n\nSecond paragraph.");
+        assertThat(chunks.get(0).text()).doesNotContain("\r");
+        assertThat(chunks.get(0).endLineNumber()).isEqualTo(4);
+    }
+
+    @Test
+    void documentsWithoutHeadingsPreserveBlankLinesAndUnixNewlines() {
+        String markdown = "Intro\r\n\r\nDetail";
+
+        var chunks = new MarkdownArchitectureChunker(new ChunkingOptions(200, 25)).chunk(markdown);
+
+        assertThat(chunks).hasSize(1);
+        assertThat(chunks.get(0).headingPath()).isEmpty();
+        assertThat(chunks.get(0).text()).isEqualTo("Intro\n\nDetail");
+        assertThat(chunks.get(0).text()).doesNotContain("\r");
+    }
+
+    @Test
     void invalidChunkConfigurationFailsFast() {
         assertThatThrownBy(() -> new ChunkingOptions(0, 0))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -120,5 +146,15 @@ class MarkdownArchitectureChunkerTest {
         assertThatThrownBy(() -> new ChunkingOptions(50, 50))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Overlap");
+    }
+
+    @Test
+    void chunkSizeAppliesToHeadingAndBodyText() {
+        String markdown = "# Heading\n" + "a".repeat(30);
+
+        var chunks = new MarkdownArchitectureChunker(new ChunkingOptions(35, 5)).chunk(markdown);
+
+        assertThat(chunks).hasSize(2);
+        assertThat(chunks).allSatisfy(chunk -> assertThat(chunk.text().length()).isLessThanOrEqualTo(35));
     }
 }

@@ -66,15 +66,12 @@ public class MarkdownArchitectureChunker {
             }
 
             if (currentSection == null) {
-                if (line.isBlank()) {
-                    continue;
-                }
                 if (sections.isEmpty() || !sections.getLast().getHeadingPath().isEmpty()) {
                     sections.add(new DocumentSection(List.of(), List.of(), "", lineIndex + 1, lineIndex + 1));
                 }
-                sections.getLast().appendContent(line);
+                sections.getLast().appendLine(line, lineIndex + 1);
             } else {
-                currentSection.appendContent(line);
+                currentSection.appendLine(line, lineIndex + 1);
             }
         }
 
